@@ -6,6 +6,7 @@
       <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
       <script src="https://visjs.github.io/vis-timeline/standalone/umd/vis-timeline-graph2d.min.js"></script>
       <link href="https://visjs.github.io/vis-timeline/styles/vis-timeline-graph2d.min.css" rel="stylesheet" type="text/css" />
+      <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 </head>
 
 <body>
@@ -38,7 +39,7 @@
     }
 
     function getGroups() {
-      var url = GITLAB_API_URL + 'groups/' + GROUP_ID + '/subgroups?include_subgroups';
+      var url = GITLAB_API_URL + 'groups/' + GROUP_ID + '/subgroups?include_subgroups=true';
       return fetchApi(url);
     }
 
@@ -53,6 +54,7 @@
       var groups = await getGroups();
 
       for (const group of groups) {
+        console.log(group);
         var milestones = await getMilestones(group.id);
         milestones = milestones.map(m => {
           m.group = group.id;
