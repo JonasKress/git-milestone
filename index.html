@@ -11,7 +11,13 @@
 </head>
 
 <body>
-  <div id="visualization"></div>
+  <div id="visualization">
+    <div class="d-flex justify-content-center">
+      <div id="loader" class="spinner-border" role="status">
+        <span class="sr-only">Loading...</span>
+      </div>
+    </div>
+  </div>
 
   <script type="text/javascript">
     const GROUP_ID = 154;
@@ -112,12 +118,17 @@
         groups = await getGroups();
 
       for (const group of groups) {
+        const groupMilestones = await getMilestones(group.id);
+
+        if (groupMilestones.length === 0)
+          continue;
+
         groupSet.add({
           id: group.id,
           content: '<a href="' + group.web_url + '">' + group.name + '</a>'
         });
 
-        milestones = milestones.concat(await getMilestones(group.id));
+        milestones = milestones.concat(groupMilestones);
       }
 
       var timeline = new vis.Timeline(document.getElementById('visualization'));
@@ -127,6 +138,9 @@
 
       timeline.setGroups(groupSet);
       timeline.setItems(createTimelineItems(milestones));
+      setTimeout(function() {
+        document.getElementById('loader').style.display = "none";
+      }, 0);
     }
     createTimeline();
   </script>
