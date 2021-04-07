@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="UTF-8">
   <title>Git milestones</title>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
-      <script src="https://visjs.github.io/vis-timeline/standalone/umd/vis-timeline-graph2d.min.js"></script>
-      <link href="https://visjs.github.io/vis-timeline/styles/vis-timeline-graph2d.min.css" rel="stylesheet" type="text/css" />
-      <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+  <script src="https://visjs.github.io/vis-timeline/standalone/umd/vis-timeline-graph2d.min.js"></script>
+  <link href="https://visjs.github.io/vis-timeline/styles/vis-timeline-graph2d.min.css" rel="stylesheet" type="text/css" />
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 </head>
 
 <body>
@@ -14,6 +15,8 @@
 
   <script type="text/javascript">
     const GROUP_ID = 154;
+
+    const NOT_SCHEDULED_GROUP_ID = 154;
     const GITLAB_API_URL = 'https://gitlab.matrix.org/api/v4/';
 
     function geAccessToken() {
@@ -43,53 +46,87 @@
       return fetchApi(url);
     }
 
-    function getMilestones(id) {
-      var url = GITLAB_API_URL + '/groups/' + id + '/milestones?state=active';
-      return fetchApi(url);
+    async function getMilestones(id) {
+      var url = GITLAB_API_URL + '/groups/' + id + '/milestones?state=active',
+        m = await fetchApi(url),
+        color = getRandomColor();
+
+      m = m.map(m => {
+        m.group = id;
+        m.color = color;
+        return m;
+      });
+
+      return m;
+    }
+
+    function getRandomColor() {
+      const randomInt = (min, max) => {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      };
+
+      var h = randomInt(0, 360);
+      var s = randomInt(42, 98);
+      var l = randomInt(40, 90);
+      return `hsl(${h},${s}%,${l}%, 0.3)`;
+    }
+
+    function mapMilestonesDataSetFunction(d) {
+      r = {};
+      r.id = d.id;
+      r.content = '<a href="' + d.web_url + '" title="' + d.title + '" target="_blank">' + d.title + '</a>';
+
+      r.start = d.start_date;
+      if (d.due_date)
+        r.end = d.due_date;
+
+      r.group = d.group;
+      r.style = 'background-color: ' + d.color + ';';
+
+      if (!d.start_date) {
+        r.group = NOT_SCHEDULED_GROUP_ID;
+        r.start = moment().format();
+        r.end = moment().add(3, 'M').format();
+        r.style = 'background-color: white;';
+      }
+
+      return r;
+    }
+
+    function createGroupSet() {
+      var groupSet = new vis.DataSet();
+      groupSet.add({
+        id: NOT_SCHEDULED_GROUP_ID,
+        content: 'Not scheduled'
+      });
+      return groupSet;
+    }
+
+    function createTimelineItems(milestones) {
+      return new vis.DataSet(milestones.map(mapMilestonesDataSetFunction));
     }
 
     async function createTimeline() {
-      var data = [];
-      var groupSet = new vis.DataSet();
-      var groups = await getGroups();
+      var milestones = [],
+        groupSet = createGroupSet(),
+        groups = await getGroups();
 
       for (const group of groups) {
-        console.log(group);
-        var milestones = await getMilestones(group.id);
-        milestones = milestones.map(m => {
-          m.group = group.id;
-          return m;
-        });
-
-        data = data.concat(milestones);
         groupSet.add({
           id: group.id,
           content: '<a href="' + group.web_url + '">' + group.name + '</a>'
         });
+
+        milestones = milestones.concat(await getMilestones(group.id));
       }
 
-      var dataSet = data.filter(function(d) {
-        return d.start_date;
-      }).map(d => {
-        r = {};
-        r.id = d.id;
-        r.content = '<a href="' + d.web_url + '">' + d.title + '</a>';
-        r.start = d.start_date;
-        r.end = d.due_date;
-        r.group = d.group;
-
-        return r;
+      var timeline = new vis.Timeline(document.getElementById('visualization'));
+      timeline.setOptions({
+        groupOrder: 'content'
       });
 
-      var items = new vis.DataSet(dataSet);
-      var options = {
-        groupOrder: 'content'
-      };
-
-      var timeline = new vis.Timeline(document.getElementById('visualization'));
-      timeline.setOptions(options);
       timeline.setGroups(groupSet);
-      timeline.setItems(items);
+      timeline.setItems(createTimelineItems(milestones));
     }
     createTimeline();
   </script>
