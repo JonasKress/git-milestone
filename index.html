@@ -24,7 +24,7 @@
       const value = localStorage.getItem(key);
 
       if (!value || value.length < 20) {
-        localStorage.setItem(key, prompt('Please provide Gitlab access token'))
+        localStorage.setItem(key, prompt('Please provide Gitlab access token -> you can create one here: https://gitlab.matrix.org/-/profile/personal_access_tokens'))
       }
 
       return localStorage.getItem(key);
