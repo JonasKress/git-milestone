@@ -1,10 +1,12 @@
 <html>
+<!DOCTYPE html>
 
 <head>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
-
-  <script src="https://visjs.github.io/vis-timeline/standalone/umd/vis-timeline-graph2d.min.js"></script>
-  <link href="https://visjs.github.io/vis-timeline/styles/vis-timeline-graph2d.min.css" rel="stylesheet" type="text/css" />
+  <meta charset="UTF-8">
+  <title>Página de prueba<title>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+      <script src="https://visjs.github.io/vis-timeline/standalone/umd/vis-timeline-graph2d.min.js"></script>
+      <link href="https://visjs.github.io/vis-timeline/styles/vis-timeline-graph2d.min.css" rel="stylesheet" type="text/css" />
 </head>
 
 <body>
@@ -14,17 +16,17 @@
     const GROUP_ID = 154;
     const GITLAB_API_URL = 'https://gitlab.matrix.org/api/v4/';
 
-    function geAccessToken(){
+    function geAccessToken() {
       const key = 'GITLAB-PRIVATE-TOKEN';
       const value = localStorage.getItem(key);
-      
-      if(!value || value.length < 20) {
+
+      if (!value || value.length < 20) {
         localStorage.setItem(key, prompt('Please provide Gitlab access token'))
       }
-      
+
       return localStorage.getItem(key);
     }
-    
+
     async function fetchApi(url) {
       const response = await fetch(url, {
         method: 'GET',
@@ -42,7 +44,7 @@
     }
 
     function getMilestones(id) {
-      var url = GITLAB_API_URL+ '/groups/' + id + '/milestones?state=active';
+      var url = GITLAB_API_URL + '/groups/' + id + '/milestones?state=active';
       return fetchApi(url);
     }
 
@@ -53,12 +55,15 @@
 
       for (const group of groups) {
         var milestones = await getMilestones(group.id);
-        milestones = milestones.map(m=> {m.group = group.id; return m;});
-        
+        milestones = milestones.map(m => {
+          m.group = group.id;
+          return m;
+        });
+
         data = data.concat(milestones);
         groupSet.add({
           id: group.id,
-          content: '<a href="'+group.web_url+'">'+group.name+'</a>'
+          content: '<a href="' + group.web_url + '">' + group.name + '</a>'
         });
       }
 
@@ -67,7 +72,7 @@
       }).map(d => {
         r = {};
         r.id = d.id;
-        r.content = '<a href="'+d.web_url+'">'+d.title+'</a>';
+        r.content = '<a href="' + d.web_url + '">' + d.title + '</a>';
         r.start = d.start_date;
         r.end = d.due_date;
         r.group = d.group;
@@ -87,5 +92,6 @@
     }
     createTimeline();
   </script>
+</body>
 
 </html>
