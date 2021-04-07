@@ -1,0 +1,91 @@
+<html>
+
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+
+  <script src="https://visjs.github.io/vis-timeline/standalone/umd/vis-timeline-graph2d.min.js"></script>
+  <link href="https://visjs.github.io/vis-timeline/styles/vis-timeline-graph2d.min.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+  <div id="visualization"></div>
+
+  <script type="text/javascript">
+    const GROUP_ID = 154;
+    const GITLAB_API_URL = 'https://gitlab.matrix.org/api/v4/';
+
+    function geAccessToken(){
+      const key = 'GITLAB-PRIVATE-TOKEN';
+      const value = localStorage.getItem(key);
+      
+      if(!value || value.length < 20) {
+        localStorage.setItem(key, prompt('Please provide Gitlab access token'))
+      }
+      
+      return localStorage.getItem(key);
+    }
+    
+    async function fetchApi(url) {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'PRIVATE-TOKEN': geAccessToken(),
+          'Content-Type': 'application/json',
+        },
+      })
+      return await response.json();
+    }
+
+    function getGroups() {
+      var url = GITLAB_API_URL + 'groups/' + GROUP_ID + '/subgroups?include_subgroups';
+      return fetchApi(url);
+    }
+
+    function getMilestones(id) {
+      var url = GITLAB_API_URL+ '/groups/' + id + '/milestones?state=active';
+      return fetchApi(url);
+    }
+
+    async function createTimeline() {
+      var data = [];
+      var groupSet = new vis.DataSet();
+      var groups = await getGroups();
+
+      for (const group of groups) {
+        var milestones = await getMilestones(group.id);
+        milestones = milestones.map(m=> {m.group = group.id; return m;});
+        
+        data = data.concat(milestones);
+        groupSet.add({
+          id: group.id,
+          content: '<a href="'+group.web_url+'">'+group.name+'</a>'
+        });
+      }
+
+      var dataSet = data.filter(function(d) {
+        return d.start_date;
+      }).map(d => {
+        r = {};
+        r.id = d.id;
+        r.content = '<a href="'+d.web_url+'">'+d.title+'</a>';
+        r.start = d.start_date;
+        r.end = d.due_date;
+        r.group = d.group;
+
+        return r;
+      });
+
+      var items = new vis.DataSet(dataSet);
+      var options = {
+        groupOrder: 'content'
+      };
+
+      var timeline = new vis.Timeline(document.getElementById('visualization'));
+      timeline.setOptions(options);
+      timeline.setGroups(groupSet);
+      timeline.setItems(items);
+    }
+    createTimeline();
+  </script>
+
+</html>
