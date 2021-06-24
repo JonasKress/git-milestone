@@ -48,12 +48,12 @@
     }
 
     function getGroups() {
-      var url = GITLAB_API_URL + 'groups/' + GROUP_ID + '/subgroups?include_subgroups=true';
+      var url = GITLAB_API_URL + 'groups/' + GROUP_ID + '/subgroups?include_subgroups=true&per_page=500';
       return fetchApi(url);
     }
 
     async function getMilestones(id) {
-      var url = GITLAB_API_URL + '/groups/' + id + '/milestones?state=active',
+      var url = GITLAB_API_URL + '/groups/' + id + '/milestones?state=active&per_page=500',
         m = await fetchApi(url),
         color = getRandomColor();
 
